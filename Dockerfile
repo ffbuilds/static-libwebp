@@ -7,9 +7,10 @@ ARG LIBWEBP_VERSION=1.2.4
 ARG LIBWEBP_URL="https://github.com/webmproject/libwebp/archive/v$LIBWEBP_VERSION.tar.gz"
 ARG LIBWEBP_SHA256=dfe7bff3390cd4958da11e760b65318f0a48c32913e4d5bc5e8d55abaaa2d32e
 
-# bump: alpine /FROM alpine:([\d.]+)/ docker:alpine|^3
-# bump: alpine link "Release notes" https://alpinelinux.org/posts/Alpine-$LATEST-released.html
-FROM alpine:3.16.2 AS base
+# Must be specified
+ARG ALPINE_VERSION
+
+FROM alpine:${ALPINE_VERSION} AS base
 
 FROM base AS download
 ARG LIBWEBP_URL
@@ -31,10 +32,18 @@ COPY --from=download /tmp/libwebp/ /tmp/libwebp/
 WORKDIR /tmp/libwebp
 RUN \
   apk add --no-cache --virtual build \
-    build-base autoconf automake libtool && \
+    build-base autoconf automake libtool pkgconf && \
   ./autogen.sh && \
   ./configure --disable-shared --enable-static --with-pic --enable-libwebpmux --disable-libwebpextras --disable-libwebpdemux --disable-sdl --disable-gl --disable-png --disable-jpeg --disable-tiff --disable-gif && \
   make -j$(nproc) install && \
+  # Sanity tests
+  pkg-config --exists --modversion --path libwebp && \
+  pkg-config --exists --modversion --path libwebpmux && \
+  ar -t /usr/local/lib/libwebp.a && \
+  ar -t /usr/local/lib/libwebpmux.a && \
+  readelf -h /usr/local/lib/libwebp.a && \
+  readelf -h /usr/local/lib/libwebpmux.a && \
+  # Cleanup
   apk del build
 
 FROM scratch
