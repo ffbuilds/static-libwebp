@@ -40,15 +40,18 @@ RUN \
   # Sanity tests
   pkg-config --exists --modversion --path libwebp && \
   pkg-config --exists --modversion --path libwebpmux && \
+  pkg-config --exists --modversion --path libsharpyuv && \
   ar -t /usr/local/lib/libwebp.a && \
   ar -t /usr/local/lib/libwebpmux.a && \
+  ar -t /usr/local/lib/libsharpyuv.a && \
   readelf -h /usr/local/lib/libwebp.a && \
   readelf -h /usr/local/lib/libwebpmux.a && \
+  readelf -h /usr/local/lib/libsharpyuv.a && \
   # Cleanup
   apk del build
 
 FROM scratch
 ARG LIBWEBP_VERSION
-COPY --from=build /usr/local/lib/pkgconfig/libwebp*.pc /usr/local/lib/pkgconfig/
-COPY --from=build /usr/local/lib/libwebp*.a /usr/local/lib/
+COPY --from=build /usr/local/lib/pkgconfig/lib*.pc /usr/local/lib/pkgconfig/
+COPY --from=build /usr/local/lib/lib*.a /usr/local/lib/
 COPY --from=build /usr/local/include/webp/ /usr/local/include/webp/
